@@ -1,0 +1,70 @@
+{
+  "extends": [
+    "tslint:recommended"
+  ],
+  "rules": {
+    "max-line-length": [
+      true,
+      200
+    ],
+    "indent": [
+      true,
+      "spaces",
+      2
+    ],
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
+    "typedef": [
+      true,
+      "call-signature",
+      "parameter",
+      "member-variable-declaration",
+      "property-declaration"
+    ],
+    "semicolon": [
+      true,
+      "never"
+    ],
+    "curly": [
+      true,
+      "ignore-same-line"
+    ]
+  },
+  "jsRules": {
+    "max-line-length": [
+      true,
+      200
+    ],
+    "indent": [
+      true,
+      "spaces",
+      2
+    ],
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
+    "semicolon": [
+      true,
+      "never"
+    ],
+    "curly": [
+      true,
+      "ignore-same-line"
+    ]
+  }
+}
