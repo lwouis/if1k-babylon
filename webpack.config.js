@@ -34,11 +34,13 @@ module.exports = (env, options) => ({
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
+  externals: {
+    oimo: true,
+    cannon: true,
+    earcut: true,
+  },
   plugins: [
-    new HtmlWebpackPlugin({template: 'index.ejs'}), new DefinePlugin({
-      OIMO: JSON.stringify(true),
-      CANNON: JSON.stringify(true),
-    }), new CopyWebpackPlugin([
+    new HtmlWebpackPlugin({template: 'index.ejs'}), new CopyWebpackPlugin([
       {
         from: path.join(src, 'assets'),
         to: path.join(dist, 'assets'),

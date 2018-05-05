@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "babylonjs": "^3.2.0-rc.4",
-    "babylonjs-gui": "^3.2.0-rc.4",
     "immutable": "^3.8.2"
   },
   "devDependencies": {

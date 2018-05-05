@@ -1,28 +1,40 @@
 import 'pepjs'
 import {Engine} from 'babylonjs'
-import {AdvancedDynamicTexture, Control, InputText} from 'babylonjs-gui'
+import {ASSETS} from './helpers'
+
+window.addEventListener('DOMContentLoaded', () => {
+  const c = createCanvas()
+  const e = createEngine(c)
+  window.addEventListener('resize', () => e.resize())
+  loadThenHotReload(() => renderLoop(e))
+})
 
 function renderLoop(e: Engine): void {
   e.stopRenderLoop()
-  const {MyScene} = require('./my-scene')
-  const s = MyScene(e)
+  const {createScene} = require('./scene')
+  const s = createScene(e)
   e.runRenderLoop(() => s.render())
 }
 
-function loadWithHotReload(f: () => void): void {
+/** webpack hot-reload for better DX */
+function loadThenHotReload(f: () => void): void {
   f()
   if (module.hot) {
-    module.hot.accept('./my-scene', () => {
+    module.hot.accept('./scene', () => {
       f()
     })
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+function createCanvas(): HTMLCanvasElement {
   const c = document.createElement('canvas')
   document.body.appendChild(c)
-  const e = new Engine(c, true)
+  return c
+}
+
+function createEngine(c: HTMLCanvasElement): Engine {
+  const e = new Engine(c, true, {deterministicLockstep: true, lockstepMaxSteps: 4})
   e.enableOfflineSupport = false
-  window.addEventListener('resize', () => e.resize())
-  loadWithHotReload(() => renderLoop(e))
-})
+  Engine.ShadersRepository = ASSETS
+  return e
+}
