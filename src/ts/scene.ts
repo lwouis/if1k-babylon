@@ -24,7 +24,7 @@ function setupScene(scene: Scene, camera: UniversalCamera):
     const boss = createBoss(assetTasks[1])
     const ship = createShip(assetTasks[0], assetTasks[2], scene)
     loopShip(keysDown, assetTasks[3], ship.mesh, boss, camera, scene)
-    loopBoss(boss.mesh, ship, assetTasks[3], camera, scene)
+    loopBoss(boss, ship, assetTasks[3], camera, scene)
     createUi(boss, ship, scene)
     // const [bgM, bgS] = createBackground(scene)
     // loopBackground(bgM, bgS, camera, scene)

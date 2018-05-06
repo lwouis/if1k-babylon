@@ -13,6 +13,6 @@ export function createUi(boss: Boss, ship: Ship, scene: Scene) {
 
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
-    text1.text = `boss: ${boss.health}                                                          ship: ${ship.health}`
+    text1.text = `boss: ${boss.health} (phase ${boss.phase()})                                                          ship: ${ship.health}`
   })
 }
