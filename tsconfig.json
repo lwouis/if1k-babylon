@@ -8,6 +8,8 @@
     "module": "commonjs",
     "allowJs": true,
     "sourceMap": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "noUnusedParameters": true,
+    "noUnusedLocals": true
   }
 }

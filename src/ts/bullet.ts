@@ -1,7 +1,5 @@
-import {AbstractMesh, Color4, Mesh, ParticleSystem, Scene, TextureAssetTask, UniversalCamera, Vector3} from 'babylonjs'
+import {AbstractMesh, Color4, Mesh, ParticleSystem, Scene, TextureAssetTask, Vector3} from 'babylonjs'
 import {List} from 'immutable'
-import {KeysDown} from './controls'
-import {Boss} from './boss'
 
 export class Bullet {
   constructor(public mesh: Mesh, public particles: ParticleSystem) {
@@ -13,51 +11,32 @@ export class Bullets {
   }
 }
 
-export function createBullet(t: TextureAssetTask, ship: AbstractMesh, boss: AbstractMesh, s: Scene): Bullet {
-  const m = Mesh.CreateSphere('originalShot', 1, 9, s)
+export function createBullet(t: TextureAssetTask, s: Scene): Bullet {
+  const m = Mesh.CreateSphere('originalShot', 1, 4, s)
   m.renderingGroupId = 2
-  m.isVisible = false
-  return new Bullet(m, createBulletParticles(s, t, m))
+  m.isVisible = true
+  // m.checkCollisions = true
+  // m.showBoundingBox = true
+  return new Bullet(m, createBulletParticles(t, m, s))
 }
 
-function cloneBullet(bullets: Bullets, bullet: Bullet, ship: BABYLON.AbstractMesh): Bullet {
+export function cloneBullet(bullets: Bullets, bullet: Bullet, ship: AbstractMesh): Bullet {
   const count = bullets.current.size + 1
   const bulletMesh = bullet.mesh.clone('shot' + count)
   const newB = new Bullet(bulletMesh, bullet.particles.clone('bulletTail' + count, bulletMesh))
-  newB.mesh.position = new Vector3(ship.position.x, ship.position.y + 6, ship.position.z)
+  newB.mesh.position.set(ship.position.x, ship.position.y + 6, -2)
   newB.particles.start()
   return newB
 }
 
-export function loopBullets(keysDown: KeysDown, bullet: Bullet, ship: AbstractMesh, boss: Boss, bullets: Bullets, c: UniversalCamera, s: Scene): void {
-  s.registerBeforeRender(() => {
-    if (keysDown.space) {
-      bullets.current = bullets.current.push(cloneBullet(bullets, bullet, ship))
-    }
-    bullets.current = bullets.current.reduce((acc, b) => {
-      if (!c.isInFrustum(b.mesh)) {
-        removeBullet(b, s)
-        return acc
-      } else if (b.mesh.intersectsMesh(boss.mesh, false)) {
-        boss.health = boss.health - 1
-        removeBullet(b, s)
-        return acc
-      } else {
-        b.mesh.position.y += 1
-        return acc.push(b)
-      }
-    }, List<Bullet>())
-  })
-}
-
-function removeBullet(b: Bullet, s: Scene): void {
+export function removeBullet(b: Bullet, s: Scene): void {
   b.particles.stop()
   s._toBeDisposed.push(b.particles)
   s._toBeDisposed.push(b.mesh)
 }
 
-function createBulletParticles(s: Scene, t: TextureAssetTask, m: AbstractMesh): ParticleSystem {
-  const p = new ParticleSystem('originalShot', 400, s)
+function createBulletParticles(t: TextureAssetTask, m: AbstractMesh, s: Scene): ParticleSystem {
+  const p = new ParticleSystem('originalShotParticules', 400, s)
   p.emitter = m
   p.particleTexture = t.texture
   p.minEmitBox = Vector3.Zero()

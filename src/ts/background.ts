@@ -28,7 +28,7 @@ export function createBackground(s: Scene): [Mesh, ShaderMaterial] {
 export function loopBackground(bgM: Mesh, bgS: ShaderMaterial, c: UniversalCamera, s: Scene): void {
   const ss = new ShaderState(6, 0.0, 0.001, 0.00025, false)
   s.registerBeforeRender(() => {
-    bgM.position = new Vector3(0, 0, 0)
+    bgM.position.set(0, 0, 0)
     bgS.setFloat('time', ss.time)
     bgS.setFloat('pointLongitude', ss.pointLongitude)
     bgS.setFloat('alpha', ss.alpha)
