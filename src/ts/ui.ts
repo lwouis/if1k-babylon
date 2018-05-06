@@ -1,9 +1,9 @@
 import * as GUI from 'babylonjs-gui'
 import {Scene} from 'babylonjs'
 import {Ship} from './ship'
-import {Boss} from './boss'
+import {Boss, phase} from './boss'
 
-export function createUi(boss: Boss, ship: Ship, scene: Scene) {
+export function createUi(boss: Boss, ship: Ship, scene: Scene): void {
   const advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI')
   const text1 = new GUI.TextBlock()
   text1.color = 'white'
@@ -13,6 +13,6 @@ export function createUi(boss: Boss, ship: Ship, scene: Scene) {
 
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
-    text1.text = `boss: ${boss.health} (phase ${boss.phase()})                                                          ship: ${ship.health}`
+    text1.text = `boss: ${boss.health} (phase ${phase(boss)})                                                          ship: ${ship.health}`
   })
 }

@@ -20,7 +20,6 @@ export function createBackground(s: Scene): [Mesh, ShaderMaterial] {
   sh.setVector3('cameraPosition', Vector3.Zero())
   sh.backFaceCulling = true
   const m = Mesh.CreatePlane('mesh', 100, s)
-  m.renderingGroupId = 2
   m.material = sh
   return [m, sh]
 }

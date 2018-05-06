@@ -1,33 +1,32 @@
-import {AbstractMesh, Axis, MeshAssetTask, ParticleSystem, Scene, Space, TextureAssetTask, UniversalCamera, Vector3} from 'babylonjs'
+import {AbstractMesh, Axis, ParticleSystem, Scene, Space, Texture, UniversalCamera, Vector3} from 'babylonjs'
 import {KeysDown} from './controls'
 import {List} from 'immutable'
 import {Boss, DestroyableObject} from './boss'
 import {Bullet, Bullets, cloneBullet, createBullet, removeBullet} from './bullet'
+import {Framerate} from './main'
 
 export class Ship extends DestroyableObject {
 }
 
-export function createShip(mt: MeshAssetTask, t: TextureAssetTask, s: Scene): Ship {
-  const m = mt.loadedMeshes[0]
-  m.renderingGroupId = 2
-  m.receiveShadows = true
-  // m.physicsImpostor = new PhysicsImpostor(m, PhysicsImpostor.BoxImpostor, { mass: 1, restitution: 0.9 }, s)
-  // m.showBoundingBox = true
-  // m.checkCollisions = true
-  m.position.set(0, -60, 0)
-  m.rotate(Axis.X, Math.PI / 2, Space.LOCAL)
-  createPropulsionAnimation(s, t, m)
-  return new Ship(m, 5)
+export function createShip(mesh: AbstractMesh, texture: Texture, scene: Scene): Ship {
+  mesh.receiveShadows = true
+  // mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.BoxImpostor, { mass: 1, restitution: 0.9 }, scene)
+  // mesh.showBoundingBox = true
+  // mesh.checkCollisions = true
+  mesh.position.set(0, -60, 0)
+  mesh.rotate(Axis.X, Math.PI / 2, Space.LOCAL)
+  createPropulsionAnimation(scene, texture, mesh)
+  return new Ship(mesh, 5)
 }
 
-export function loopShip(keysDown: KeysDown, t: TextureAssetTask, ship: AbstractMesh, boss: Boss, camera: UniversalCamera, scene: Scene): void {
-  const speed = 2
-  const bullet = createBullet(t, scene)
+export function loopShip(keysDown: KeysDown, texture: Texture, ship: AbstractMesh, boss: Boss, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
+  const speed = 1.5
+  const bullet = createBullet(texture, scene)
   const bullets = new Bullets(List<Bullet>())
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
     movement(keysDown, ship, speed)
-    shooting(keysDown, bullet, ship, bullets)
+    shooting(keysDown, bullet, ship, bullets, framerate, scene)
     trackBullets(bullets, camera, scene, boss)
   })
 }
@@ -61,15 +60,15 @@ function trackBullets(bullets: Bullets, c: UniversalCamera, s: Scene, boss: Boss
   }, List<Bullet>())
 }
 
-function shooting(keysDown: KeysDown, bullet: Bullet, ship: AbstractMesh, bullets: Bullets): void {
+function shooting(keysDown: KeysDown, bullet: Bullet, ship: AbstractMesh, bullets: Bullets, framerate: Framerate, scene: Scene): void {
   if (keysDown.space) {
-    bullets.current = bullets.current.push(cloneBullet(bullets, bullet, ship))
-  }}
+    bullets.current = bullets.current.push(cloneBullet(bullets, bullet, ship, framerate, 350, 6, scene))
+  }
+}
 
-function createPropulsionAnimation(s: Scene, t: TextureAssetTask, m: AbstractMesh): void {
+function createPropulsionAnimation(s: Scene, t: Texture, m: AbstractMesh): void {
   const particles = new ParticleSystem('shipPropulsion', 400, s)
-  particles.renderingGroupId = 2
-  particles.particleTexture = t.texture
+  particles.particleTexture = t
   particles.emitter = m
   particles.minEmitBox.set(0, -15, 3)
   particles.maxEmitBox.set(0, -15, 3)

@@ -9,11 +9,13 @@ window.addEventListener('DOMContentLoaded', () => {
   loadThenHotReload(() => renderLoop(e))
 })
 
-function renderLoop(e: Engine): void {
-  e.stopRenderLoop()
+export type Framerate = number
+
+function renderLoop(engine: Engine): void {
+  engine.stopRenderLoop()
   const {createScene} = require('./scene')
-  const s = createScene(e)
-  e.runRenderLoop(() => s.render())
+  const s = createScene(engine, 60)
+  engine.runRenderLoop(() => s.render())
 }
 
 /** webpack hot-reload for better DX */
@@ -32,9 +34,9 @@ function createCanvas(): HTMLCanvasElement {
   return c
 }
 
-function createEngine(c: HTMLCanvasElement): Engine {
-  const e = new Engine(c, true, {deterministicLockstep: true, lockstepMaxSteps: 4})
-  e.enableOfflineSupport = false
+function createEngine(canvas: HTMLCanvasElement): Engine {
+  const engine = new Engine(canvas, true, {deterministicLockstep: true, lockstepMaxSteps: 4})
+  engine.enableOfflineSupport = false
   Engine.ShadersRepository = ASSETS
-  return e
+  return engine
 }

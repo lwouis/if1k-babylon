@@ -4,46 +4,47 @@ import {loopKeysDown} from './controls'
 import {createBoss, loopBoss} from './boss'
 import {createShip, loopShip} from './ship'
 import {createUi} from './ui'
+import {Framerate} from './main'
 
-export function createScene(e: Engine): Scene {
-  const scene = _createScene(e)
+export function createScene(engine: Engine, framerate: Framerate): Scene {
+  const scene = _createScene(engine)
   const camera = createCamera(scene)
   // camera.position.set(-200, 0, 0)
   // camera.setTarget(Vector3.Zero())
   const assetsManager = new AssetsManager(scene)
-  loadAssets(assetsManager).then(setupScene(scene, camera))
+  loadAssets(assetsManager).then(setupScene(scene, camera, framerate))
   assetsManager.load()
   return scene
 }
 
-function setupScene(scene: Scene, camera: UniversalCamera):
+function setupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate):
   (a: [MeshAssetTask, MeshAssetTask, TextureAssetTask, TextureAssetTask, TextFileAssetTask, TextFileAssetTask]) => void {
   return assetTasks => {
     createLight(scene)
     const keysDown = loopKeysDown(scene)
-    const boss = createBoss(assetTasks[1])
-    const ship = createShip(assetTasks[0], assetTasks[2], scene)
-    loopShip(keysDown, assetTasks[3], ship.mesh, boss, camera, scene)
-    loopBoss(boss, ship, assetTasks[3], camera, scene)
+    const boss = createBoss(assetTasks[1].loadedMeshes[0])
+    const ship = createShip(assetTasks[0].loadedMeshes[0], assetTasks[2].texture, scene)
+    loopShip(keysDown, assetTasks[3].texture, ship.mesh, boss, camera, framerate, scene)
+    loopBoss(boss, ship, assetTasks[3].texture, camera, framerate, scene)
     createUi(boss, ship, scene)
     // const [bgM, bgS] = createBackground(scene)
     // loopBackground(bgM, bgS, camera, scene)
   }
 }
 
-function loadAssets(a: AssetsManager): Promise<[MeshAssetTask, MeshAssetTask, TextureAssetTask, TextureAssetTask, TextFileAssetTask, TextFileAssetTask]> {
+function loadAssets(assetsManager: AssetsManager): Promise<[MeshAssetTask, MeshAssetTask, TextureAssetTask, TextureAssetTask, TextFileAssetTask, TextFileAssetTask]> {
   return Promise.all([
-    addMeshAsync(a, 'ship', '', 'spaceShip.babylon'),
-    addMeshAsync(a, 'boss', '', 'spaceShip.babylon'),
-    addTextureAsync(a, 'shipPropulsion', 'star.png'),
-    addTextureAsync(a, 'bullet', 'flare.png'),
-    addTextFileAsync(a, 'starfieldVertexShader', 'starfield.vertex.fx'),
-    addTextFileAsync(a, 'starfieldFragmentShader', 'starfield.fragment.fx'),
+    addMeshAsync(assetsManager, 'ship', '', 'spaceShip.babylon'),
+    addMeshAsync(assetsManager, 'boss', '', 'spaceShip.babylon'),
+    addTextureAsync(assetsManager, 'shipPropulsion', 'star.png'),
+    addTextureAsync(assetsManager, 'bullet', 'flare.png'),
+    addTextFileAsync(assetsManager, 'starfieldVertexShader', 'starfield.vertex.fx'),
+    addTextFileAsync(assetsManager, 'starfieldFragmentShader', 'starfield.fragment.fx'),
   ])
 }
 
-function _createScene(e: Engine): Scene {
-  const scene = new Scene(e)
+function _createScene(engine: Engine): Scene {
+  const scene = new Scene(engine)
   if (!document.querySelector('.insp-wrapper')) {
     scene.debugLayer.show()
   }
