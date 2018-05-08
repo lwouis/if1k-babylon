@@ -1,20 +1,17 @@
-import {AbstractMesh, Animation, Color4, Mesh, ParticleSystem, Scene, Texture, Vector3} from 'babylonjs'
+import {AbstractMesh, Animation, Color4, Mesh, ParticleSystem, Scene, Texture, UniversalCamera, Vector3} from 'babylonjs'
 import {List} from 'immutable'
 import {Framerate} from './main'
+import {Boss} from './boss'
+import {Ship} from './ship'
 
 export class Bullet {
   constructor(public mesh: Mesh, public particles: ParticleSystem) {
   }
 }
 
-export class Bullets {
-  constructor(public current: List<Bullet>) {
-  }
-}
-
 function simpleAnimation(mesh: Mesh, framerate: Framerate, distance: number): Animation {
-  const animation = new Animation('simpleAnimation', 'position.y', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE)
-  animation.setKeys([{frame: 0, value: mesh.position.y}, {frame: framerate * 4 , value: mesh.position.y + distance}])
+  const animation = new Animation('simpleAnimation', 'position.y', framerate, Animation.ANIMATIONTYPE_FLOAT)
+  animation.setKeys([{frame: 0, value: mesh.position.y}, {frame: framerate * 4, value: mesh.position.y + distance}])
   return animation
 }
 
@@ -24,18 +21,34 @@ export function createBullet(texture: Texture, scene: Scene): Bullet {
   return new Bullet(m, createBulletParticles(texture, m, scene))
 }
 
-export function cloneBullet(bullets: Bullets, bullet: Bullet, mesh: AbstractMesh, framerate: Framerate, distance: number, offset: number, scene: Scene): Bullet {
-  const count = bullets.current.size + 1
+export function cloneBullet(bulletCount: number, bullet: Bullet, framerate: Framerate, distance: number, position: Vector3, scene: Scene): Bullet {
+  const count = bulletCount + 1
   const clonedMesh = bullet.mesh.clone('shot' + count)
-  clonedMesh.position.set(mesh.position.x, mesh.position.y + offset, -2)
-  const clonedBullet = new Bullet(clonedMesh, bullet.particles.clone('bulletTail' + count, clonedMesh))
+  clonedMesh.position = position.add(new Vector3(0, 0, -2)) // without this -2, the bullets are too low to intersect other objects
+  const clonedParticules = bullet.particles.clone('bulletTail' + count, clonedMesh)
+  const clonedBullet = new Bullet(clonedMesh, clonedParticules)
   clonedBullet.particles.start()
   clonedMesh.animations = [simpleAnimation(clonedMesh, framerate, distance)]
   scene.beginAnimation(clonedMesh, 0, framerate * 16, false)
   return clonedBullet
 }
 
-export function removeBullet(b: Bullet, s: Scene): void {
+export function trackBullets(bullets: List<Bullet>, c: UniversalCamera, s: Scene, target: Boss | Ship): List<Bullet> {
+  return bullets.reduce((acc, b) => {
+    if (!c.isInFrustum(b.mesh)) {
+      removeBullet(b, s)
+      return acc
+    } else if (b.mesh.intersectsMesh(target.mesh, false)) {
+      target.health = target.health - 1
+      removeBullet(b, s)
+      return acc
+    } else {
+      return acc.push(b)
+    }
+  }, List<Bullet>())
+}
+
+function removeBullet(b: Bullet, s: Scene): void {
   b.particles.stop()
   s._toBeDisposed.push(b.particles)
   s._toBeDisposed.push(b.mesh)

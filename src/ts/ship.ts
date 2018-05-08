@@ -1,15 +1,21 @@
 import {AbstractMesh, Axis, ParticleSystem, Scene, Space, Texture, UniversalCamera, Vector3} from 'babylonjs'
 import {KeysDown} from './controls'
 import {List} from 'immutable'
-import {Boss, DestroyableObject} from './boss'
-import {Bullet, Bullets, cloneBullet, createBullet, removeBullet} from './bullet'
+import {Boss} from './boss'
+import {Bullet, cloneBullet, createBullet, trackBullets} from './bullet'
 import {Framerate} from './main'
 
-export class Ship extends DestroyableObject {
+export class Ship {
   public maxFiringDelay: number
+  public maxHealth: number
 
-  constructor(mesh: AbstractMesh, health: number, speed: number, public firingDelay: number) {
-    super(mesh, health, speed)
+  constructor(
+    public mesh: AbstractMesh,
+    public health: number,
+    public speed: number,
+    public firingDelay: number,
+    public bullets: List<Bullet>) {
+    this.maxHealth = health
     this.maxFiringDelay = firingDelay
   }
 }
@@ -22,17 +28,16 @@ export function createShip(mesh: AbstractMesh, texture: Texture, scene: Scene): 
   mesh.position.set(0, -60, 0)
   mesh.rotate(Axis.X, Math.PI / 2, Space.LOCAL)
   createPropulsionAnimation(scene, texture, mesh)
-  return new Ship(mesh, 5, 1.5, 15)
+  return new Ship(mesh, 5, 1.5, 10, List<Bullet>())
 }
 
 export function loopShip(keysDown: KeysDown, texture: Texture, ship: Ship, boss: Boss, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
   const bullet = createBullet(texture, scene)
-  const bullets = new Bullets(List<Bullet>())
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
     movement(keysDown, ship)
-    shooting(keysDown, bullet, ship, bullets, framerate, scene)
-    trackBullets(bullets, camera, scene, boss)
+    shooting(keysDown, bullet, ship, framerate, scene)
+    ship.bullets = trackBullets(ship.bullets, camera, scene, boss)
   })
 }
 
@@ -49,27 +54,11 @@ function movement(keysDown: KeysDown, ship: Ship): void {
   }
 }
 
-function trackBullets(bullets: Bullets, c: UniversalCamera, s: Scene, boss: Boss): void {
-  bullets.current = bullets.current.reduce((acc, b) => {
-    if (!c.isInFrustum(b.mesh)) {
-      removeBullet(b, s)
-      return acc
-    } else if (b.mesh.intersectsMesh(boss.mesh, false)) {
-      boss.health = boss.health - 1
-      removeBullet(b, s)
-      return acc
-    } else {
-      b.mesh.position.y += 1
-      return acc.push(b)
-    }
-  }, List<Bullet>())
-}
-
-function shooting(keysDown: KeysDown, bullet: Bullet, ship: Ship, bullets: Bullets, framerate: Framerate, scene: Scene): void {
+function shooting(keysDown: KeysDown, bullet: Bullet, ship: Ship, framerate: Framerate, scene: Scene): void {
   if (keysDown.space) {
     ship.firingDelay--
     if (ship.firingDelay <= 0) {
-      bullets.current = bullets.current.push(cloneBullet(bullets, bullet, ship.mesh, framerate, 350, 6, scene))
+      ship.bullets = ship.bullets.push(cloneBullet(ship.bullets.size, bullet, framerate, 350, ship.mesh.position.add(new Vector3(0, 6, 0)), scene))
       ship.firingDelay = ship.maxFiringDelay
     }
   }

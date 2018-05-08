@@ -1,19 +1,20 @@
-import {AbstractMesh, Animation, AnimationEvent, Axis, Scene, Texture, UniversalCamera} from 'babylonjs'
-import {Bullet, Bullets, cloneBullet, createBullet, removeBullet} from './bullet'
+import {AbstractMesh, Animation, AnimationEvent, Axis, Scene, Texture, UniversalCamera, Vector3} from 'babylonjs'
+import {Bullet, cloneBullet, createBullet, trackBullets} from './bullet'
 import {List, Range} from 'immutable'
 import {Ship} from './ship'
 import {Framerate} from './main'
 
-export class DestroyableObject {
+export class Boss {
   public maxHealth: number
 
-  constructor(public mesh: AbstractMesh, public health: number, public speed: number) {
+  constructor(
+    public mesh: AbstractMesh,
+    public health: number,
+    public speed: number,
+    public currentPhase: number,
+    public bullets: List<Bullet>) {
     this.maxHealth = health
   }
-}
-
-export class Boss extends DestroyableObject {
-  public currentPhase: number = -1
 }
 
 export function createBoss(mesh: AbstractMesh): Boss {
@@ -25,12 +26,11 @@ export function createBoss(mesh: AbstractMesh): Boss {
   mesh.rotate(Axis.X, -Math.PI / 2)
   mesh.rotate(Axis.Y, -Math.PI)
   mesh.position.set(0, 45, 0)
-  return new Boss(mesh, 100, 60)
+  return new Boss(mesh, 100, 60, -1, List<Bullet>())
 }
 
 export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
   const bullet = createBullet(texture, scene)
-  const bullets = new Bullets(List<Bullet>())
   const phases = List([phase0, phase1, phase2])
   const animation = movement(framerate, boss, scene)
   scene.registerBeforeRender(() => {
@@ -38,9 +38,9 @@ export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: Unive
     if (phase(boss) !== boss.currentPhase) {
       boss.currentPhase = phase(boss)
       animation.getEvents().forEach(e => animation.removeEvents(e.frame))
-      phases.get(boss.currentPhase)(boss.mesh, bullet, bullets, framerate, scene).forEach(e => animation.addEvent(e))
+      phases.get(boss.currentPhase)(boss, bullet, framerate, scene).forEach(e => animation.addEvent(e))
     }
-    trackBullets(bullets, camera, scene, ship)
+    boss.bullets = trackBullets(boss.bullets, camera, scene, ship)
   })
 }
 
@@ -62,32 +62,29 @@ function movement(framerate: Framerate, boss: Boss, scene: Scene): Animation {
   return animation
 }
 
-function phase0(boss: AbstractMesh, bullet: Bullet, bullets: Bullets, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate).map(n =>
-    new AnimationEvent(n, () => bullets.current = bullets.current.push(cloneBullet(bullets, bullet, boss, framerate, -200, -10, scene)))).toList()
+function phase0(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
+  return Range(0, framerate * 16, framerate).map(n => {
+    return new AnimationEvent(n, () => {
+      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
+      return boss.bullets = boss.bullets.push(clone)
+    })
+  }).toList()
 }
 
-function phase1(boss: AbstractMesh, bullet: Bullet, bullets: Bullets, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate / 2).map(n =>
-    new AnimationEvent(n, () => bullets.current = bullets.current.push(cloneBullet(bullets, bullet, boss, framerate, -200, -10, scene)))).toList()
+function phase1(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
+  return Range(0, framerate * 16, framerate / 2).map(n => {
+    return new AnimationEvent(n, () => {
+      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
+      return boss.bullets = boss.bullets.push(clone)
+    })
+  }).toList()
 }
 
-function phase2(boss: AbstractMesh, bullet: Bullet, bullets: Bullets, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate / 4).map(n =>
-    new AnimationEvent(n, () => bullets.current = bullets.current.push(cloneBullet(bullets, bullet, boss, framerate, -200, -10, scene)))).toList()
-}
-
-function trackBullets(bullets: Bullets, camera: UniversalCamera, scene: Scene, ship: Ship): void {
-  bullets.current = bullets.current.reduce((acc, b) => {
-    if (!camera.isInFrustum(b.mesh)) {
-      removeBullet(b, scene)
-      return acc
-    } else if (b.mesh.intersectsMesh(ship.mesh, false)) {
-      ship.health = ship.health - 1
-      removeBullet(b, scene)
-      return acc
-    } else {
-      return acc.push(b)
-    }
-  }, List<Bullet>())
+function phase2(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
+  return Range(0, framerate * 16, framerate / 4).map(n => {
+    return new AnimationEvent(n, () => {
+      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
+      return boss.bullets = boss.bullets.push(clone)
+    })
+  }).toList()
 }
