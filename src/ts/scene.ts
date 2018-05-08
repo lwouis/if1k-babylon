@@ -1,5 +1,5 @@
-import {AssetsManager, Engine, HemisphericLight, MeshAssetTask, Scene, TextFileAssetTask, TextureAssetTask, UniversalCamera, Vector3} from 'babylonjs'
-import {addMeshAsync, addTextFileAsync, addTextureAsync} from './helpers'
+import {AssetsManager, Engine, HemisphericLight, Scene, UniversalCamera, Vector3} from 'babylonjs'
+import {addMeshTask, addTextFileTask, addTextureTask} from './helpers'
 import {loopKeysDown} from './controls'
 import {createBoss, loopBoss} from './boss'
 import {createShip, loopShip} from './ship'
@@ -11,36 +11,53 @@ export function createScene(engine: Engine, framerate: Framerate): Scene {
   const camera = createCamera(scene)
   // camera.position.set(-200, 0, 0)
   // camera.setTarget(Vector3.Zero())
-  const assetsManager = new AssetsManager(scene)
-  loadAssets(assetsManager).then(setupScene(scene, camera, framerate))
-  assetsManager.load()
+  loadAssetsAndSetupScene(scene, camera, framerate)
   return scene
 }
 
-function setupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate):
-  (a: [MeshAssetTask, MeshAssetTask, TextureAssetTask, TextureAssetTask, TextFileAssetTask, TextFileAssetTask]) => void {
-  return assetTasks => {
-    createLight(scene)
-    const keysDown = loopKeysDown(scene)
-    const boss = createBoss(assetTasks[1].loadedMeshes[0])
-    const ship = createShip(assetTasks[0].loadedMeshes[0], assetTasks[2].texture, scene)
-    loopShip(keysDown, assetTasks[3].texture, ship, boss, camera, framerate, scene)
-    loopBoss(boss, ship, assetTasks[3].texture, camera, framerate, scene)
-    createUi(boss, ship, scene)
-    // const [bgM, bgS] = createBackground(scene)
-    // loopBackground(bgM, bgS, camera, scene)
+function loadAssetsAndSetupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate): void {
+  const assetsManager = new AssetsManager(scene)
+  const assets = createAssetTasks(assetsManager)
+  assetsManager.onFinish = () => setupScene(scene, camera, framerate, assets)
+  assetsManager.onTaskError = e => console.error(e.errorObject.message)
+  assetsManager.load()
+}
+
+function setupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate, assets: Assets): void {
+  createLight(scene)
+  const keysDown = loopKeysDown(scene)
+  const boss = createBoss(assets.boss.loadedMeshes[0])
+  const ship = createShip(assets.ship.loadedMeshes[0], assets.shipPropulsion.texture, scene)
+  loopShip(keysDown, assets.bullet.texture, ship, boss, camera, framerate, scene)
+  loopBoss(boss, ship, assets.bullet.texture, camera, framerate, scene)
+  createUi(boss, ship, scene)
+  // const [bgM, bgS] = createBackground(scene)
+  // loopBackground(bgM, bgS, camera, scene)
+}
+
+class Assets {
+  constructor(
+    public ship: any,
+    public boss: any,
+    public shipPropulsion: any,
+    public bullet: any,
+    public starfieldVertexShader: any,
+    public starfieldFragmentShader: any,
+  ) {
   }
 }
 
-function loadAssets(assetsManager: AssetsManager): Promise<[MeshAssetTask, MeshAssetTask, TextureAssetTask, TextureAssetTask, TextFileAssetTask, TextFileAssetTask]> {
-  return Promise.all([
-    addMeshAsync(assetsManager, 'ship', '', 'spaceShip.babylon'),
-    addMeshAsync(assetsManager, 'boss', '', 'spaceShip.babylon'),
-    addTextureAsync(assetsManager, 'shipPropulsion', 'star.png'),
-    addTextureAsync(assetsManager, 'bullet', 'flare.png'),
-    addTextFileAsync(assetsManager, 'starfieldVertexShader', 'starfield.vertex.fx'),
-    addTextFileAsync(assetsManager, 'starfieldFragmentShader', 'starfield.fragment.fx'),
-  ])
+function createAssetTasks(assetsManager: AssetsManager): Assets {
+  const assets = new Assets(
+    addMeshTask('spaceShip.babylon'),
+    addMeshTask('spaceShip.babylon'),
+    addTextureTask('star.png'),
+    addTextureTask('flare.png'),
+    addTextFileTask('starfield.vertex.fx'),
+    addTextFileTask('starfield.fragment.fx'),
+  )
+  Object.keys(assets).forEach(k => assets[k] = assets[k](assetsManager, name))
+  return assets
 }
 
 function _createScene(engine: Engine): Scene {
@@ -48,9 +65,6 @@ function _createScene(engine: Engine): Scene {
   if (!document.querySelector('.insp-wrapper')) {
     scene.debugLayer.show()
   }
-  scene.collisionsEnabled = true
-  // scene.workerCollisions = true
-  // scene.enablePhysics()
   return scene
 }
 

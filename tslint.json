@@ -36,6 +36,12 @@
     "curly": [
       true,
       "ignore-same-line"
+    ],
+    "no-console": [
+      true,
+      "trace",
+      "log",
+      "info"
     ]
   },
   "jsRules": {
@@ -65,6 +71,12 @@
     "curly": [
       true,
       "ignore-same-line"
+    ],
+    "no-console": [
+      true,
+      "trace",
+      "log",
+      "info"
     ]
   }
 }

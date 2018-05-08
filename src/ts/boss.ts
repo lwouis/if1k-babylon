@@ -13,6 +13,7 @@ export class DestroyableObject {
 }
 
 export class Boss extends DestroyableObject {
+  public currentPhase: number = -1
 }
 
 export function createBoss(mesh: AbstractMesh): Boss {
@@ -28,20 +29,16 @@ export function createBoss(mesh: AbstractMesh): Boss {
 }
 
 export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
-  let currentPhase = -1
   const bullet = createBullet(texture, scene)
   const bullets = new Bullets(List<Bullet>())
   const phases = List([phase0, phase1, phase2])
-  const animation = new Animation('bossPhase1', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE)
-  animation.setKeys([{frame: 0, value: 0}, {frame: boss.speed * 4, value: 80}, {frame: boss.speed * 12, value: -80}, {frame: boss.speed * 16, value: 0}])
-  boss.mesh.animations = [animation]
-  scene.beginAnimation(boss.mesh, 0, framerate * 16, true)
+  const animation = movement(framerate, boss, scene)
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
-    if (phase(boss) !== currentPhase) {
-      currentPhase = phase(boss)
+    if (phase(boss) !== boss.currentPhase) {
+      boss.currentPhase = phase(boss)
       animation.getEvents().forEach(e => animation.removeEvents(e.frame))
-      phases.get(currentPhase)(boss.mesh, bullet, bullets, framerate, scene).forEach(e => animation.addEvent(e))
+      phases.get(boss.currentPhase)(boss.mesh, bullet, bullets, framerate, scene).forEach(e => animation.addEvent(e))
     }
     trackBullets(bullets, camera, scene, ship)
   })
@@ -55,6 +52,14 @@ export function phase(boss: Boss): number {
   } else {
     return 2
   }
+}
+
+function movement(framerate: Framerate, boss: Boss, scene: Scene): Animation {
+  const animation = new Animation('bossPhase1', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE)
+  animation.setKeys([{frame: 0, value: 0}, {frame: boss.speed * 4, value: 80}, {frame: boss.speed * 12, value: -80}, {frame: boss.speed * 16, value: 0}])
+  boss.mesh.animations = [animation]
+  scene.beginAnimation(boss.mesh, 0, framerate * 16, true)
+  return animation
 }
 
 function phase0(boss: AbstractMesh, bullet: Bullet, bullets: Bullets, framerate: Framerate, scene: Scene): List<AnimationEvent> {
