@@ -7,7 +7,7 @@ import {Framerate} from './main'
 export class DestroyableObject {
   public maxHealth: number
 
-  constructor(public mesh: AbstractMesh, public health: number) {
+  constructor(public mesh: AbstractMesh, public health: number, public speed: number) {
     this.maxHealth = health
   }
 }
@@ -24,7 +24,7 @@ export function createBoss(mesh: AbstractMesh): Boss {
   mesh.rotate(Axis.X, -Math.PI / 2)
   mesh.rotate(Axis.Y, -Math.PI)
   mesh.position.set(0, 45, 0)
-  return new Boss(mesh, 100)
+  return new Boss(mesh, 100, 60)
 }
 
 export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
@@ -33,7 +33,7 @@ export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: Unive
   const bullets = new Bullets(List<Bullet>())
   const phases = List([phase0, phase1, phase2])
   const animation = new Animation('bossPhase1', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE)
-  animation.setKeys([{frame: 0, value: 0}, {frame: framerate * 4, value: 80}, {frame: framerate * 12, value: -80}, {frame: framerate * 16, value: 0}])
+  animation.setKeys([{frame: 0, value: 0}, {frame: boss.speed * 4, value: 80}, {frame: boss.speed * 12, value: -80}, {frame: boss.speed * 16, value: 0}])
   boss.mesh.animations = [animation]
   scene.beginAnimation(boss.mesh, 0, framerate * 16, true)
   scene.registerBeforeRender(() => {
