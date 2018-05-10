@@ -1,9 +1,10 @@
 import {AbstractMesh, Axis, ParticleSystem, Scene, Space, Texture, UniversalCamera, Vector3} from 'babylonjs'
-import {KeysDown} from './controls'
+import {KeysDown, xAxisKeys, yAxisKeys} from './controls'
 import {List} from 'immutable'
 import {Boss} from './boss'
 import {Bullet, cloneBullet, createBullet, trackBullets} from './bullet'
 import {Framerate} from './main'
+import {KeyName} from './helpers'
 
 export class Ship {
   public maxFiringDelay: number
@@ -44,16 +45,23 @@ export function loopShip(keysDown: KeysDown, texture: Texture, ship: Ship, boss:
 }
 
 function movement(keysDown: KeysDown, ship: Ship): void {
-  if (keysDown.leftRight.peek() === 'ArrowLeft') {
-    ship.mesh.moveWithCollisions(new Vector3(-ship.speed, 0, 0))
-  } else if (keysDown.leftRight.peek() === 'ArrowRight') {
-    ship.mesh.moveWithCollisions(new Vector3(ship.speed, 0, 0))
+  const yAxisKeyDown = keysDown.upDown.peek()
+  const xAxisKeyDown = keysDown.leftRight.peek()
+  ship.mesh.moveWithCollisions(new Vector3(
+    speedOnAxis(xAxisKeyDown, yAxisKeyDown, xAxisKeys, yAxisKeys, ship.speed),
+    speedOnAxis(yAxisKeyDown, xAxisKeyDown, yAxisKeys, xAxisKeys, ship.speed),
+    0))
+}
+
+function speedOnAxis(axis1KeyDown: KeyName, axis2KeyDown: KeyName, axis1Keys: KeyName[], axis2Keys: KeyName[], speed: number): number {
+  if (!axis1Keys.includes(axis1KeyDown)) {
+    return 0
   }
-  if (keysDown.upDown.peek() === 'ArrowUp') {
-    ship.mesh.moveWithCollisions(new Vector3(0, ship.speed, 0))
-  } else if (keysDown.upDown.peek() === 'ArrowDown') {
-    ship.mesh.moveWithCollisions(new Vector3(0, -ship.speed, 0))
+  const sign = axis1KeyDown === axis1Keys[0] ? -1 : 1
+  if (!axis2Keys.includes(axis2KeyDown)) {
+    return sign * speed
   }
+  return sign * speed / Math.sqrt(2)
 }
 
 function shooting(keysDown: KeysDown, bullet: Bullet, ship: Ship, framerate: Framerate, scene: Scene): void {
