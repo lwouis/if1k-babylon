@@ -6,7 +6,8 @@
     "build-dev": "webpack --mode development",
     "build-prod": "webpack --mode production",
     "stats": "webpack --profile --json --mode production > stats.json",
-    "lint": "tslint --project ."
+    "lint": "tslint --project .",
+    "cloc": "cloc . --exclude-dir=node_modules --git"
   },
   "dependencies": {
     "babylonjs": "^3.2.0-rc.4",
@@ -16,6 +17,7 @@
   "devDependencies": {
     "@types/webpack": "^4.1.4",
     "@types/webpack-env": "^1.13.6",
+    "cloc": "^2.3.3",
     "copy-webpack-plugin": "^4.5.1",
     "file-loader": "^1.1.11",
     "html-webpack-plugin": "^3.2.0",
