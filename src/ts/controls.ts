@@ -3,7 +3,10 @@ import {Stack} from 'immutable'
 import {ActionManager, Scene} from 'babylonjs'
 
 export class KeysDown {
-  constructor(public leftRight: Stack<KeyName>, public upDown: Stack<KeyName>, public space: boolean) {
+  constructor(
+    public leftRight: Stack<KeyName>,
+    public upDown: Stack<KeyName>,
+    public space: boolean) {
   }
 }
 

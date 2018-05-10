@@ -5,7 +5,9 @@ import {Boss} from './boss'
 import {Ship} from './ship'
 
 export class Bullet {
-  constructor(public mesh: Mesh, public particles: ParticleSystem) {
+  constructor(
+    public mesh: Mesh,
+    public particles: ParticleSystem) {
   }
 }
 
