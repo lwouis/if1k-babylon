@@ -32,59 +32,74 @@ export function createBoss(mesh: AbstractMesh): Boss {
 export function loopBoss(boss: Boss, ship: Ship, texture: Texture, camera: UniversalCamera, framerate: Framerate, scene: Scene): void {
   const bullet = createBullet(texture, scene)
   const phases = List([phase0, phase1, phase2])
-  const animation = movement(framerate, boss, scene)
+  const waitInCenterAnimation = waitInCenter(framerate, boss)
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
     if (phase(boss) !== boss.currentPhase) {
       boss.currentPhase = phase(boss)
-      animation.getEvents().forEach(e => animation.removeEvents(e.frame))
-      phases.get(boss.currentPhase)(boss, bullet, framerate, scene).forEach(e => animation.addEvent(e))
+      const phaseAnimation = phases.get(boss.currentPhase)(boss, bullet, framerate, scene)
+      scene.stopAnimation(boss.mesh, 'bossMoveAround')
+      scene.beginDirectAnimation(boss.mesh, [waitInCenterAnimation], 0, framerate * 16, false, 1, () =>
+        scene.beginDirectAnimation(boss.mesh, [phaseAnimation], 0, framerate * 16, true))
     }
     boss.bullets = trackBullets(boss.bullets, camera, scene, ship)
   })
 }
 
 export function phase(boss: Boss): number {
-  if (boss.health > boss.maxHealth * 2 / 3) {
+  if (boss.health > 99) {//boss.maxHealth * 2 / 3) {
     return 0
-  } else if (boss.health > boss.maxHealth / 3) {
+  } else if (boss.health > 95) {//boss.maxHealth / 3) {
     return 1
   } else {
     return 2
   }
 }
 
-function movement(framerate: Framerate, boss: Boss, scene: Scene): Animation {
-  const animation = new Animation('bossPhase1', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE)
-  animation.setKeys([{frame: 0, value: 0}, {frame: boss.speed * 4, value: 80}, {frame: boss.speed * 12, value: -80}, {frame: boss.speed * 16, value: 0}])
-  boss.mesh.animations = [animation]
-  scene.beginAnimation(boss.mesh, 0, framerate * 16, true)
+function waitInCenter(framerate: Framerate, boss: Boss): Animation {
+  const animation = new Animation('bossWaitInCenter', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE, true)
+  animation.blendingSpeed = 0.01
+  animation.setKeys([{frame: 0, value: boss.mesh.position.x}, {frame: framerate * 3, value: 0}])
   return animation
 }
 
-function phase0(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate).map(n => {
-    return new AnimationEvent(n, () => {
-      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
-      return boss.bullets = boss.bullets.push(clone)
-    })
-  }).toList()
+function phaseMovement(framerate: Framerate, boss: Boss): Animation {
+  const animation = new Animation('bossMoveAround', 'position.x', framerate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE, true)
+  animation.blendingSpeed = 0.01
+  animation.setKeys([{frame: 0, value: 0}, {frame: boss.speed * 4, value: 80}, {frame: boss.speed * 12, value: -80}, {frame: boss.speed * 16, value: 0}])
+  return animation
 }
 
-function phase1(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate / 2).map(n => {
+function phaseBullets(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene, animation: Animation, fireRate: number, positions: Vector3[]): void {
+  Range(0, framerate * 16 + fireRate, fireRate).map(n => {
     return new AnimationEvent(n, () => {
-      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
-      return boss.bullets = boss.bullets.push(clone)
+      const b = positions.map(a => cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(a), scene))
+      return boss.bullets = boss.bullets.concat(b).toList()
     })
-  }).toList()
+  }).forEach(e => animation.addEvent(e))
 }
 
-function phase2(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): List<AnimationEvent> {
-  return Range(0, framerate * 16, framerate / 4).map(n => {
-    return new AnimationEvent(n, () => {
-      const clone = cloneBullet(boss.bullets.size, bullet, framerate, -200, boss.mesh.position.add(new Vector3(0, -6, 0)), scene)
-      return boss.bullets = boss.bullets.push(clone)
-    })
-  }).toList()
+function phase0(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): Animation {
+  const animation = phaseMovement(framerate, boss)
+  phaseBullets(boss, bullet, framerate, scene, animation, framerate, [new Vector3(0, -6, 0)])
+  return animation
+}
+
+function phase1(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): Animation {
+  const animation = phaseMovement(framerate, boss)
+  phaseBullets(boss, bullet, framerate, scene, animation, framerate, [
+    new Vector3(-3, -6, 0),
+    new Vector3(3, -6, 0),
+  ])
+  return animation
+}
+
+function phase2(boss: Boss, bullet: Bullet, framerate: Framerate, scene: Scene): Animation {
+  const animation = phaseMovement(framerate, boss)
+  phaseBullets(boss, bullet, framerate, scene, animation, framerate, [
+    new Vector3(-6, -6, 0),
+    new Vector3(0, -6, 0),
+    new Vector3(6, -6, 0),
+  ])
+  return animation
 }

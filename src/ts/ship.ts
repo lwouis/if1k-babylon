@@ -25,6 +25,8 @@ export function createShip(mesh: AbstractMesh, texture: Texture, scene: Scene): 
   // mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.BoxImpostor, { mass: 1, restitution: 0.9 }, scene)
   // mesh.showBoundingBox = true
   // mesh.checkCollisions = true
+  const size = 0.4
+  mesh.scaling.set(size, size, size)
   mesh.position.set(0, -60, 0)
   mesh.rotate(Axis.X, Math.PI / 2, Space.LOCAL)
   createPropulsionAnimation(scene, texture, mesh)
