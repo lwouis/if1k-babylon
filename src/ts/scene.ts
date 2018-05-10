@@ -4,33 +4,33 @@ import {loopKeysDown} from './controls'
 import {createBoss, loopBoss} from './boss'
 import {createShip, loopShip} from './ship'
 import {createUi} from './ui'
-import {Framerate} from './main'
+import {Framerate, NativeHeight, NativeWidth} from './main'
 
-export function createScene(engine: Engine, framerate: Framerate): Scene {
+export function createScene(engine: Engine, framerate: Framerate, nativeWidth: NativeWidth, nativeHeight: NativeHeight): Scene {
   const scene = _createScene(engine)
   const camera = createCamera(scene)
   // camera.position.set(-200, 0, 0)
   // camera.setTarget(Vector3.Zero())
-  loadAssetsAndSetupScene(scene, camera, framerate)
+  loadAssetsAndSetupScene(scene, camera, framerate, nativeWidth, nativeHeight)
   return scene
 }
 
-function loadAssetsAndSetupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate): void {
+function loadAssetsAndSetupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate, nativeWidth: NativeWidth, nativeHeight: NativeHeight): void {
   const assetsManager = new AssetsManager(scene)
   const assets = createAssetTasks(assetsManager)
-  assetsManager.onFinish = () => setupScene(scene, camera, framerate, assets)
+  assetsManager.onFinish = () => setupScene(scene, camera, framerate, assets, nativeWidth, nativeHeight)
   assetsManager.onTaskError = e => console.error(e.errorObject.message)
   assetsManager.load()
 }
 
-function setupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate, assets: Assets): void {
+function setupScene(scene: Scene, camera: UniversalCamera, framerate: Framerate, assets: Assets, nativeWidth: NativeWidth, nativeHeight: NativeHeight): void {
   createLight(scene)
   const keysDown = loopKeysDown(scene)
   const boss = createBoss(assets.boss.loadedMeshes[0])
   const ship = createShip(assets.ship.loadedMeshes[0], assets.shipPropulsion.texture, scene)
   loopShip(keysDown, assets.bullet.texture, ship, boss, camera, framerate, scene)
   loopBoss(boss, ship, assets.bullet.texture, camera, framerate, scene)
-  createUi(boss, ship, scene)
+  createUi(boss, ship, scene, nativeWidth, nativeHeight)
   // const [bgM, bgS] = createBackground(scene)
   // loopBackground(bgM, bgS, camera, scene)
 }
@@ -63,7 +63,7 @@ function createAssetTasks(assetsManager: AssetsManager): Assets {
 function _createScene(engine: Engine): Scene {
   const scene = new Scene(engine)
   if (!document.querySelector('.insp-wrapper')) {
-    scene.debugLayer.show()
+    // scene.debugLayer.show()
   }
   return scene
 }

@@ -2,17 +2,32 @@ import * as GUI from 'babylonjs-gui'
 import {Scene} from 'babylonjs'
 import {Ship} from './ship'
 import {Boss, phase} from './boss'
+import {NativeHeight, NativeWidth} from './main'
+import {List} from 'immutable'
 
-export function createUi(boss: Boss, ship: Ship, scene: Scene): void {
+function createText(horizontalAlignment: number): GUI.TextBlock {
+  const textBlock = new GUI.TextBlock()
+  textBlock.color = 'white'
+  textBlock.fontSize = 24
+  textBlock.paddingTop = 24
+  textBlock.paddingLeft = 24
+  textBlock.paddingRight = 24
+  textBlock.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP
+  textBlock.textHorizontalAlignment = horizontalAlignment
+  return textBlock
+}
+
+export function createUi(boss: Boss, ship: Ship, scene: Scene, nativeWidth: NativeWidth, nativeHeight: NativeHeight): void {
+  const leftText = createText(GUI.Control.HORIZONTAL_ALIGNMENT_LEFT)
+  const rightText = createText(GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT)
   const advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI('UI')
-  const text1 = new GUI.TextBlock()
-  text1.color = 'white'
-  text1.fontSize = 24
-  text1.textVerticalAlignment = GUI.Control.VERTICAL_ALIGNMENT_TOP
-  advancedTexture.addControl(text1)
+  advancedTexture.idealWidth = nativeWidth
+  advancedTexture.idealHeight = nativeHeight
+  List([leftText, rightText]).forEach(a => advancedTexture.addControl(a))
 
   scene.registerBeforeRender(() => {
     if (!scene.isReady()) return
-    text1.text = `boss: ${boss.health} (phase ${phase(boss)})                                                          ship: ${ship.health}`
+    leftText.text = `boss: ${boss.health} (phase ${phase(boss)})`
+    rightText.text = `ship: ${ship.health}`
   })
 }
